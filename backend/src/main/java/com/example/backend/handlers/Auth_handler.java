@@ -28,20 +28,20 @@ public class Auth_handler {
     private PasswordEncoder bcrypt;
 
     @Autowired
-    private Repo repo;
+    public Repo repo;
 
     @Autowired 
     private Services services;
 
 
-    private static final Logger logger =LoggerFactory.getLogger(User_table_repo.class);
+    private static final Logger logger =LoggerFactory.getLogger(Auth_handler.class);
 
 
     public AuthResult SignUp(String name, String mail, String pass) {
         String hashedPass = bcrypt.encode(pass);
 
         try {
-            boolean success = repo.user_repo.Createuser(name, mail, hashedPass);
+            boolean success = this.repo.user_repo.Createuser(name, mail, hashedPass);
 
             if (success) {
                 logger.info("User created successfully: {}", mail);

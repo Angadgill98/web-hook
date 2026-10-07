@@ -14,8 +14,13 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.util.List;
 
 @Configuration
 @EnableMethodSecurity
@@ -41,6 +46,7 @@ public class SecurityConfig {
     public SecurityFilterChain SecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
+            .cors(cors -> {})
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/sign-up", "/api/auth/sign-in").permitAll()
                 .anyRequest().authenticated()
@@ -54,6 +60,21 @@ public class SecurityConfig {
     }
 
     @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedMethods(List.of("*"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source;
+    }
+
+    @Bean
     public BearerTokenResolver cookieBearerTokenResolver() {
         return new BearerTokenResolver() {
 
@@ -62,12 +83,6 @@ public class SecurityConfig {
                 if (request.getCookies() == null) {
                     return null;
                 }
-
-                // for (var cookie : request.getCookies()) {
-                //     if ("access_token".equals(cookie.getName())) {
-                //         return cookie.getValue();
-                //     }
-                // }
 
                 for (var cookie : request.getCookies()) {
                     if ("refresh_token".equals(cookie.getName())) {

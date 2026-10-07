@@ -13,7 +13,7 @@ import com.example.backend.services.Services;
 public class Api_Webhook_handler {
 
     @Autowired
-    private Repo repo;
+    public Repo repo;
 
     @Autowired
     private Services services;
