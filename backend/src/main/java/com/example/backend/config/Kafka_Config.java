@@ -1,0 +1,112 @@
+package com.example.backend.config;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
+import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
+
+import com.example.backend.handlers.Webhook_handler.WebhookEvent;
+
+@Configuration
+public class Kafka_Config {
+
+    @Bean
+    public NewTopic whEventsTopic() {
+        return new NewTopic("wh_events", 3, (short) 1);
+    }
+
+    @Bean
+    public NewTopic eventsStatusTopic() {
+        return new NewTopic("events_status", 3, (short) 1);
+    }
+
+    @Bean
+    public ProducerFactory<String, WebhookEvent> webhookProducerFactory() {
+        Map<String, Object> config = new HashMap<>();
+
+        config.put("bootstrap.servers", "localhost:9092");
+        config.put("key.serializer", StringSerializer.class);
+        config.put("value.serializer", JacksonJsonSerializer.class);
+
+        return new DefaultKafkaProducerFactory<>(config);
+    }
+
+    @Bean
+    public KafkaTemplate<String, WebhookEvent> webhookKafkaTemplate() {
+        return new KafkaTemplate<>(webhookProducerFactory());
+    }
+
+    @Bean
+    public ProducerFactory<String, String> statusProducerFactory() {
+        Map<String, Object> config = new HashMap<>();
+
+        config.put("bootstrap.servers", "localhost:9092");
+        config.put("key.serializer", StringSerializer.class);
+        config.put("value.serializer", StringSerializer.class);
+
+        return new DefaultKafkaProducerFactory<>(config);
+    }
+
+    @Bean
+    public KafkaTemplate<String, String> statusKafkaTemplate() {
+        return new KafkaTemplate<>(statusProducerFactory());
+    }
+
+    @Bean
+    public ConsumerFactory<String, WebhookEvent> webhookConsumerFactory() {
+        Map<String, Object> config = new HashMap<>();
+
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        config.put(ConsumerConfig.GROUP_ID_CONFIG, "webhook-group");
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
+
+        JacksonJsonDeserializer<WebhookEvent> deserializer = new JacksonJsonDeserializer<>(WebhookEvent.class);
+        deserializer.addTrustedPackages("com.example.backend");
+
+        return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), deserializer);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, WebhookEvent> webhookKafkaListenerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, WebhookEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
+
+        factory.setConsumerFactory(webhookConsumerFactory());
+
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, String> statusConsumerFactory() {
+        Map<String, Object> config = new HashMap<>();
+
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        config.put(ConsumerConfig.GROUP_ID_CONFIG, "status-group");
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+
+        return new DefaultKafkaConsumerFactory<>(config);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, String> statusKafkaListenerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
+
+        factory.setConsumerFactory(statusConsumerFactory());
+
+        return factory;
+    }
+}

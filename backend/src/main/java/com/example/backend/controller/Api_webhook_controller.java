@@ -1,0 +1,82 @@
+package com.example.backend.controller;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.backend.dto.Webhook_dto;
+import com.example.backend.handlers.Api_Webhook_handler.WebhookResult;
+import com.example.backend.handlers.Handlers;
+
+@RestController
+@RequestMapping("/api/webhook")
+public class Api_webhook_controller {
+
+    private static final Logger logger = LoggerFactory.getLogger(Api_webhook_controller.class);
+
+    @Autowired
+    private Handlers handler;
+
+    @PostMapping("/create")
+    public WebhookResult CreateWebHook(@RequestBody Webhook_dto.CreateWebHook_Req request,Authentication authentication) {
+        long userId = Long.parseLong(authentication.getName());
+
+        WebhookResult result = handler.api_webhook.CreateWebHook(
+            userId,
+            request.routeName,
+            request.receiverUrl
+        );
+
+        logger.info("Create webhook request completed for user: {}", userId);
+
+        return result;
+    }
+
+    @PutMapping("/receiver")
+    public boolean UpdateReceiverUrl(@RequestBody Webhook_dto.UpdateReceiverUrl_Req request, Authentication authentication) {
+        long userId = Long.parseLong(authentication.getName());
+
+        boolean success = handler.api_webhook.UpdateReceiverUrl(
+            userId,
+            request.webhookId,
+            request.receiverUrl
+        );
+
+        logger.info("Update receiver URL request completed for webhook: {}", request.webhookId);
+
+        return success;
+    }
+
+    @PutMapping("/route")
+    public boolean UpdateRouteName(@RequestBody Webhook_dto.UpdateRouteName_Req request, Authentication authentication) {
+        long userId = Long.parseLong(authentication.getName());
+
+        boolean success = handler.api_webhook.UpdateRouteName(
+            userId,
+            request.webhookId,
+            request.routeName
+        );
+
+        logger.info("Update route name request completed for webhook: {}", request.webhookId);
+
+        return success;
+    }
+
+    @DeleteMapping
+    public boolean DeleteWebHook(@RequestBody Webhook_dto.DeleteWebHook_Req request, Authentication authentication) {
+        long userId = Long.parseLong(authentication.getName());
+
+        boolean success = handler.api_webhook.DeleteWebHook(userId, request.webhookId);
+
+        logger.info("Delete webhook request completed for webhook: {}", request.webhookId);
+
+        return success;
+    }
+}
