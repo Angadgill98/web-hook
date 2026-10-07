@@ -13,5 +13,8 @@ public class Repo {
 
     @Autowired 
     public Webhook_table_repo webhook_repo;
+
+    @Autowired
+    public Webhook_events_table_repo webhook_events_repo;
     
 }
