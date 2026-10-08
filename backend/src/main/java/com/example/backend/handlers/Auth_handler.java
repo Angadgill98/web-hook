@@ -82,7 +82,7 @@ public class Auth_handler {
 
         ResponseCookie accessCookie = ResponseCookie.from("access_token", accessToken)
             .httpOnly(true)
-            .secure(true)
+            .secure(false)
             .path("/")
             .maxAge(Duration.ofMinutes(15))
             .sameSite("Lax")
@@ -90,14 +90,14 @@ public class Auth_handler {
 
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
             .httpOnly(true)
-            .secure(true)
+            .secure(false)
             .path("/")
             .maxAge(Duration.ofDays(30))
             .sameSite("Lax")
             .build();
 
-        response.addHeader("access-token", accessCookie.toString());
-        response.addHeader("refresh-token", refreshCookie.toString());
+        response.addHeader("Set-Cookie", accessCookie.toString());
+        response.addHeader("Set-Cookie", refreshCookie.toString());
     }
 
     public record AuthResult(boolean success, String message, Object data) {}

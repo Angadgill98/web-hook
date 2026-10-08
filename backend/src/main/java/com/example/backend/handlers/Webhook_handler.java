@@ -7,20 +7,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Service;
 
 import com.example.backend.models.Webhook;
 import com.example.backend.repo.Repo;
-import com.example.backend.repo.User_table_repo;
 
+@Service
 public class Webhook_handler {
-    
-    @Autowired 
-    private Repo repo;
-
-    private static final Logger logger = LoggerFactory.getLogger(User_table_repo.class);
 
     @Autowired
-    private KafkaTemplate<String, WebhookEvent> kafkaTemplate; 
+    private Repo repo;
+
+    private static final Logger logger = LoggerFactory.getLogger(Webhook_handler.class);
+
+    @Autowired
+    private KafkaTemplate<String, WebhookEvent> web_hook_event_producer_template;
+
+    @Autowired
+    private KafkaTemplate<String, String> web_hook_status_template;
 
     public void init(String webhook_url, byte[] body) {
         Webhook webhook = repo.webhook_repo.GetWebhookByUrl(webhook_url);
@@ -42,7 +46,19 @@ public class Webhook_handler {
             OffsetDateTime.now()
         );
 
-        kafkaTemplate.send("wh_events", String.valueOf(webhook.getId()), event);
+        web_hook_event_producer_template.send(
+            "wh_events",
+            String.valueOf(webhook.getId()),
+            event
+        );
+    }
+
+    public void sendStatus(String key, String status) {
+        web_hook_status_template.send(
+            "events_status",
+            key,
+            status
+        );
     }
 
     public record WebhookEvent(

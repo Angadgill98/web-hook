@@ -1,6 +1,9 @@
 "use client";
 
+import { Api } from "@/Api";
 import React, { useEffect, useRef, useState } from "react";
+
+let api=Api.getInstance()
 
 const Dashboard = () => {
     let webhook_name = useRef<HTMLInputElement | null>(null);
@@ -65,7 +68,7 @@ async function HandleWebHookCreation(
     set_sending(true);
 
     try {
-        let response = await CreateWebHook(name, url);
+        let response = await api.webhook_api.CreateWebHook(name, url);
 
         
     } finally {

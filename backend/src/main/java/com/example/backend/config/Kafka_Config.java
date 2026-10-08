@@ -45,7 +45,7 @@ public class Kafka_Config {
     }
 
     @Bean
-    public KafkaTemplate<String, WebhookEvent> webhookKafkaTemplate() {
+    public KafkaTemplate<String, WebhookEvent> web_hook_event_producer_template() {
         return new KafkaTemplate<>(webhookProducerFactory());
     }
 
@@ -61,7 +61,7 @@ public class Kafka_Config {
     }
 
     @Bean
-    public KafkaTemplate<String, String> statusKafkaTemplate() {
+    public KafkaTemplate<String, String> web_hook_status_remplate() {
         return new KafkaTemplate<>(statusProducerFactory());
     }
 

@@ -1,5 +1,7 @@
 package com.example.backend.repo;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -135,6 +137,37 @@ public class Webhook_table_repo {
         } catch (Exception e) {
             logger.error("Failed to get webhook for URL: {}", webhook_url, e);
             return null;
+        }
+    }
+
+
+
+
+    public List<Webhook> GetWebhooksByUserId(long user_id) {
+        String query = """
+            SELECT id, user_id, route_name, webhook_url, receiver_endpoint, latest_event_order
+            FROM webhook
+            WHERE user_id = ?
+            ORDER BY id
+            """;
+
+        try {
+            return jdbc.query(
+                query,
+                (rs, rowNum) -> new Webhook(
+                    rs.getLong("id"),
+                    rs.getLong("user_id"),
+                    rs.getString("route_name"),
+                    rs.getString("webhook_url"),
+                    rs.getString("receiver_endpoint"),
+                    rs.getLong("latest_event_order")
+                ),
+                user_id
+            );
+
+        } catch (Exception e) {
+            logger.error("Failed to get webhooks for user: {}", user_id, e);
+            return List.of();
         }
     }
     

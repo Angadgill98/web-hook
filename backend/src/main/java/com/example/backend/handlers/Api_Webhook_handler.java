@@ -1,10 +1,12 @@
 package com.example.backend.handlers;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.backend.models.Webhook;
 import com.example.backend.repo.Repo;
 import com.example.backend.services.Services;
 
@@ -28,6 +30,10 @@ public class Api_Webhook_handler {
         }
 
         return new WebhookResult(false, "Webhook creation failed", "");
+    }
+
+    public List<Webhook> GetWebhooksByUserId(long user_id) {
+        return repo.webhook_repo.GetWebhooksByUserId(user_id);
     }
 
     public boolean UpdateReceiverUrl(long user_id, long webhook_id, String receiver_url) {

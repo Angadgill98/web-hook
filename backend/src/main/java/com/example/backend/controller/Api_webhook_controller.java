@@ -1,10 +1,13 @@
 package com.example.backend.controller;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.backend.dto.Webhook_dto;
 import com.example.backend.handlers.Api_Webhook_handler.WebhookResult;
 import com.example.backend.handlers.Handlers;
+import com.example.backend.models.Webhook;
 
 @RestController
 @RequestMapping("/api/webhook")
@@ -39,7 +43,14 @@ public class Api_webhook_controller {
         return result;
     }
 
-    @PutMapping("/receiver")
+    @GetMapping("/get-all-webhooks")
+    public List<Webhook> GetAllWebhooks(Authentication authentication) {
+        long user_id = Long.parseLong(authentication.getName());
+
+        return handler.api_webhook.GetWebhooksByUserId(user_id);
+    }
+
+    @PutMapping("/update-rec-url")
     public boolean UpdateReceiverUrl(@RequestBody Webhook_dto.UpdateReceiverUrl_Req request, Authentication authentication) {
         long userId = Long.parseLong(authentication.getName());
 
@@ -54,7 +65,7 @@ public class Api_webhook_controller {
         return success;
     }
 
-    @PutMapping("/route")
+    @PutMapping("/update-hook-name")
     public boolean UpdateRouteName(@RequestBody Webhook_dto.UpdateRouteName_Req request, Authentication authentication) {
         long userId = Long.parseLong(authentication.getName());
 
@@ -69,7 +80,7 @@ public class Api_webhook_controller {
         return success;
     }
 
-    @DeleteMapping
+    @DeleteMapping("/delete-webhook")
     public boolean DeleteWebHook(@RequestBody Webhook_dto.DeleteWebHook_Req request, Authentication authentication) {
         long userId = Long.parseLong(authentication.getName());
 

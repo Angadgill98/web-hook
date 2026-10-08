@@ -48,7 +48,11 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> {})
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/sign-up", "/api/auth/sign-in").permitAll()
+                .requestMatchers(
+        "/api/auth/sign-up",
+                    "/api/auth/sign-in",
+                    "/webhook/sent/**"
+                ).permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
@@ -80,12 +84,18 @@ public class SecurityConfig {
 
             @Override
             public String resolve(HttpServletRequest request) {
+                String path = request.getRequestURI();
+
+                if (path.equals("/api/auth/sign-in") || path.equals("/api/auth/sign-up")) {
+                    return null;
+                }
+
                 if (request.getCookies() == null) {
                     return null;
                 }
 
                 for (var cookie : request.getCookies()) {
-                    if ("refresh_token".equals(cookie.getName())) {
+                    if ("access_token".equals(cookie.getName())) {
                         return cookie.getValue();
                     }
                 }
