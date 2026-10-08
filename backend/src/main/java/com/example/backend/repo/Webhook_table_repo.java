@@ -9,9 +9,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import com.example.backend.models.Webhook;
+import com.example.backend.models.WebhookEvent;
 
-
-@Repository  
+@Repository
 public class Webhook_table_repo {
 
     private static final Logger logger = LoggerFactory.getLogger(Webhook_table_repo.class);
@@ -19,14 +19,14 @@ public class Webhook_table_repo {
     @Autowired
     private JdbcTemplate jdbc;
 
-    public boolean CreateWebHook(long user_id, String route_name, String webhook_url, String reciver_url) {
+    public boolean CreateWebHook(long user_id, String route_name, String webhook_url, String reciver_url, String http_method) {
         String query = """
-            INSERT INTO webhook (user_id, route_name, webhook_url, receiver_endpoint)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO webhook (user_id, route_name, webhook_url, receiver_endpoint, http_method)
+            VALUES (?, ?, ?, ?, ?)
             """;
 
         try {
-            int rows = jdbc.update(query, user_id, route_name, webhook_url, reciver_url);
+            int rows = jdbc.update(query, user_id, route_name, webhook_url, reciver_url, http_method);
 
             if (rows == 1) {
                 logger.info("Webhook created successfully for user: {}", user_id);
@@ -113,9 +113,9 @@ public class Webhook_table_repo {
         }
     }
 
-   public Webhook GetWebhookByUrl(String webhook_url) {
+    public Webhook GetWebhookByUrl(String webhook_url) {
         String query = """
-            SELECT id, user_id, route_name, webhook_url, receiver_endpoint, latest_event_order
+            SELECT id, user_id, route_name, webhook_url, receiver_endpoint, http_method, latest_event_order
             FROM webhook
             WHERE webhook_url = ?
             """;
@@ -129,6 +129,7 @@ public class Webhook_table_repo {
                     rs.getString("route_name"),
                     rs.getString("webhook_url"),
                     rs.getString("receiver_endpoint"),
+                    rs.getString("http_method"),
                     rs.getLong("latest_event_order")
                 ),
                 webhook_url
@@ -140,12 +141,9 @@ public class Webhook_table_repo {
         }
     }
 
-
-
-
     public List<Webhook> GetWebhooksByUserId(long user_id) {
         String query = """
-            SELECT id, user_id, route_name, webhook_url, receiver_endpoint, latest_event_order
+            SELECT id, user_id, route_name, webhook_url, receiver_endpoint, http_method, latest_event_order
             FROM webhook
             WHERE user_id = ?
             ORDER BY id
@@ -160,6 +158,7 @@ public class Webhook_table_repo {
                     rs.getString("route_name"),
                     rs.getString("webhook_url"),
                     rs.getString("receiver_endpoint"),
+                    rs.getString("http_method"),
                     rs.getLong("latest_event_order")
                 ),
                 user_id
@@ -170,5 +169,6 @@ public class Webhook_table_repo {
             return List.of();
         }
     }
-    
+
+
 }

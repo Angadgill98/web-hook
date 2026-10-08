@@ -1,6 +1,7 @@
 CREATE TABLE webhook (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
+    http_method VARCHAR(10) NOT NULL DEFAULT 'GET',
     route_name VARCHAR(255) NOT NULL,
     webhook_url VARCHAR(255) NOT NULL,
     receiver_endpoint VARCHAR(255) NOT NULL,

@@ -7,17 +7,19 @@ public class Webhook {
     private String routeName;
     private String webhookUrl;
     private String receiverEndpoint;
+    private String httpMethod;
     private long latestEventOrder;
 
     public Webhook() {
     }
 
-    public Webhook(long id, long userId, String routeName, String webhookUrl, String receiverEndpoint, long latestEventOrder) {
+    public Webhook(long id, long userId, String routeName, String webhookUrl, String receiverEndpoint, String httpMethod, long latestEventOrder) {
         this.id = id;
         this.userId = userId;
         this.routeName = routeName;
         this.webhookUrl = webhookUrl;
         this.receiverEndpoint = receiverEndpoint;
+        this.httpMethod = httpMethod;
         this.latestEventOrder = latestEventOrder;
     }
 
@@ -59,6 +61,14 @@ public class Webhook {
 
     public void setReceiverEndpoint(String receiverEndpoint) {
         this.receiverEndpoint = receiverEndpoint;
+    }
+
+    public String getHttpMethod() {
+        return httpMethod;
+    }
+
+    public void setHttpMethod(String httpMethod) {
+        this.httpMethod = httpMethod;
     }
 
     public long getLatestEventOrder() {

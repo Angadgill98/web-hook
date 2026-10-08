@@ -20,10 +20,10 @@ public class Api_Webhook_handler {
     @Autowired
     private Services services;
 
-    public WebhookResult CreateWebHook(long user_id, String route_name, String reciver_url) {
+    public WebhookResult CreateWebHook(long user_id, String route_name, String reciver_url,String http_method) {
         String webhook_url = UUID.randomUUID().toString();
 
-        boolean success = repo.webhook_repo.CreateWebHook(user_id, route_name, webhook_url, reciver_url);
+        boolean success = repo.webhook_repo.CreateWebHook(user_id, route_name, webhook_url, reciver_url,http_method);
 
         if (success) {
             return new WebhookResult(true, "Webhook created successfully", webhook_url);

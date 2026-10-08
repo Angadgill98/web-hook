@@ -3,16 +3,24 @@ package com.example.backend.kafka.events_status.Consumer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import com.example.backend.handlers.Webhook_handler.WebhookEvent;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.example.backend.models.WebhookEvent;
+import com.example.backend.repo.Repo;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+@Service 
 public class Workers {
 
     private int worker_count = 3;
-    private BlockingQueue<String> queue;
+    private BlockingQueue<WebhookEvent> queue;
+
+    private Events_Processing_Pipeline pipeline=new Events_Processing_Pipeline();
 
     public Workers() {
         queue = new LinkedBlockingQueue<>();
@@ -23,11 +31,13 @@ public class Workers {
             Thread.startVirtualThread(() -> {
                 while (true) {
                     try {
-                        String status = queue.take();
+                        WebhookEvent event = queue.take();
 
-                        System.out.println("Worker " + workerId + " received status: " + status);
+                        System.out.println("Worker " + workerId + " received status: " + event);
 
                         // Process status here
+
+                        pipeline.InsertEvent(event);
 
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
@@ -38,7 +48,7 @@ public class Workers {
         }
     }
 
-    public void send(String status) {
+    public void send(WebhookEvent status) {
         try {
             queue.put(status);
         } catch (InterruptedException e) {
@@ -53,8 +63,11 @@ class Events_Processing_Pipeline {
     private long eventCount = 0;
     private long batchSize = 100;
 
+    @Autowired 
+    private Repo repo;
+
     public void InsertEvent(WebhookEvent event) {
-        String eventId = event.id().toString();
+        String eventId = event.getId().toString();
 
         if (!events.containsKey(eventId)) {
             events.put(eventId, new ConcurrentHashMap<>());
@@ -62,11 +75,11 @@ class Events_Processing_Pipeline {
 
         Map<String, List<WebhookEvent>> eventStatuses = events.get(eventId);
 
-        if (!eventStatuses.containsKey(event.status())) {
-            eventStatuses.put(event.status(), new ArrayList<>());
+        if (!eventStatuses.containsKey(event.getStatus())) {
+            eventStatuses.put(event.getStatus(), new ArrayList<>());
         }
 
-        List<WebhookEvent> statusEvents = eventStatuses.get(event.status());
+        List<WebhookEvent> statusEvents = eventStatuses.get(event.getStatus());
         statusEvents.add(event);
 
         eventCount++;
@@ -78,6 +91,7 @@ class Events_Processing_Pipeline {
         if (eventCount >= batchSize) {
             List<WebhookEvent> finalEvents = ProcessBatch();
             InsertEvents(finalEvents);
+            //here later upda teh status to teh stored and then sent those ot kafka
         }
     }
 
@@ -88,37 +102,46 @@ class Events_Processing_Pipeline {
             String eventId = entry.getKey();
             Map<String, List<WebhookEvent>> statuses = entry.getValue();
 
-            if (statuses.containsKey("completed")) {
-                WebhookEvent event = GetLatestEvent(statuses.get("completed"));
-                finalEvents.add(event);
+            if (statuses.containsKey("stored")) {
+                // WebhookEvent event = GetLatestEvent(statuses.get("stored"));
+                // finalEvents.add(event);
 
             } else if (statuses.containsKey("sent")) {
                 WebhookEvent event = GetLatestEvent(statuses.get("sent"));
                 finalEvents.add(event);
 
-            } else if (statuses.containsKey("stored")) {
-                WebhookEvent event = GetLatestEvent(statuses.get("stored"));
+            } else if (statuses.containsKey("failed")) {
+                WebhookEvent event = GetLatestEvent(statuses.get("failed"));
                 finalEvents.add(event);
 
             } else if (statuses.containsKey("received")) {
                 WebhookEvent event = GetLatestEvent(statuses.get("received"));
                 finalEvents.add(event);
             }
+
+            
         }
 
         return finalEvents;
     }
+   
+   
+    //whwen we added the arrivallorder logivc
+    // private WebhookEvent GetLatestEvent(List<WebhookEvent> events) {
+    //     WebhookEvent latest = events.get(0);
+
+    //     for (WebhookEvent event : events) {
+    //         if (event.getArrivalOrder() > latest.getArrivalOrder()) {
+    //             latest = event;
+    //         }
+    //     }
+
+    //     return latest;
+    // }
+
 
     private WebhookEvent GetLatestEvent(List<WebhookEvent> events) {
-        WebhookEvent latest = events.get(0);
-
-        for (WebhookEvent event : events) {
-            if (event.arrivalOrder() > latest.arrivalOrder()) {
-                latest = event;
-            }
-        }
-
-        return latest;
+        return events.get(events.size() - 1);
     }
 
 
@@ -142,7 +165,10 @@ class Events_Processing_Pipeline {
                 user_id = EXCLUDED.user_id,
                 user_event_order = EXCLUDED.user_event_order,
                 tries = EXCLUDED.tries,
-                status = EXCLUDED.status,
+                status = CASE
+                    WHEN EXCLUDED.status = 'sent' THEN 'stored'
+                    ELSE EXCLUDED.status
+                END,
                 arrival_order = EXCLUDED.arrival_order,
                 last_updated = CURRENT_TIMESTAMP
             """;
@@ -150,18 +176,18 @@ class Events_Processing_Pipeline {
         String incomingStatusPriority = """
             CASE EXCLUDED.status
                 WHEN 'received' THEN 1
-                WHEN 'stored' THEN 2
+                WHEN 'failed' THEN 2
                 WHEN 'sent' THEN 3
-                WHEN 'completed' THEN 4
+                WHEN 'stored' THEN 4
             END
             """;
 
         String existingStatusPriority = """
             CASE webhook_events.status
                 WHEN 'received' THEN 1
-                WHEN 'stored' THEN 2
+                WHEN 'failed' THEN 2
                 WHEN 'sent' THEN 3
-                WHEN 'completed' THEN 4
+                WHEN 'stored' THEN 4
             END
             """;
 
@@ -181,11 +207,10 @@ class Events_Processing_Pipeline {
                     %s
                 )
             """.formatted(higherStatus, sameStatusHigherArrival);
-        
-        String sql = baseQuery + columns + onConflict + doUpdate + whereCondition;  
-        
-        
-    
+
+        String sql = baseQuery + columns + onConflict + doUpdate + whereCondition;
+
+        repo.webhook_events_repo.InsertEvents(sql, events);
     }
 
 }

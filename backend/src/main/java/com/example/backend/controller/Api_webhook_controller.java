@@ -35,7 +35,8 @@ public class Api_webhook_controller {
         WebhookResult result = handler.api_webhook.CreateWebHook(
             userId,
             request.routeName,
-            request.receiverUrl
+            request.receiverUrl,
+            request.httpMethod
         );
 
         logger.info("Create webhook request completed for user: {}", userId);

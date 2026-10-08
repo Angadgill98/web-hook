@@ -1,6 +1,9 @@
 CREATE TABLE webhook_events (
     id UUID PRIMARY KEY,
     data BYTEA NOT NULL,
+    http_method VARCHAR(10) NOT NULL,
+    receiver_endpoint VARCHAR(255) NOT NULL,
+    response BYTEA[],
     webhook_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
     user_event_order BIGINT,

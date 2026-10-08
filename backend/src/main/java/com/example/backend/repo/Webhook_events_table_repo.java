@@ -1,10 +1,14 @@
 package com.example.backend.repo;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+
+import com.example.backend.models.WebhookEvent;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,48 +20,29 @@ public class Webhook_events_table_repo {
 
     private static final Logger logger = LoggerFactory.getLogger(Webhook_events_table_repo.class);
 
-    public boolean InsertEvent(UUID id, byte[] data, long webhookId, long userId, Long userEventOrder, long arrivalOrder, int tries, String status) {
-        String sql = "insert into webhook_events (id,data,webhook_id,user_id,user_event_order,arrival_order,tries,status) values (?,?,?,?,?,?,?,?)";
+    public void InsertEvents(String sql, List<WebhookEvent> events) {
         try {
-            int rows = jdbc.update(sql, id, data, webhookId, userId, userEventOrder, arrivalOrder, tries, status);
-            return rows == 1;
+            jdbc.batchUpdate(
+                sql,
+                events,
+                events.size(),
+                (ps, event) -> {
+                    ps.setObject(1, event.getId());
+                    ps.setBytes(2, event.getData());
+                    ps.setLong(3, event.getWebhookId());
+                    ps.setLong(4, event.getUserId());
+                    ps.setLong(5, event.getUserEventOrder());
+                    ps.setLong(6, event.getArrivalOrder());
+                    ps.setInt(7, event.getTries());
+                    ps.setString(8, event.getStatus());
+                }
+            );
+
+            logger.info("Inserted {} webhook events", events.size());
+
         } catch (Exception e) {
-            logger.error("Failed to insert webhook event {}", id, e);
-            return false;
+            logger.error("Failed to insert {} webhook events", events.size(), e);
         }
     }
 
-    public boolean UpdateStatus(UUID id, String status) {
-        String sql = "update webhook_events set status = ?, last_updated = CURRENT_TIMESTAMP where id = ?";
-        try {
-            int rows = jdbc.update(sql, status, id);
-            return rows == 1;
-        } catch (Exception e) {
-            logger.error("Failed to update status for webhook event {}", id, e);
-            return false;
-        }
-    }
-
-    public boolean UpdateTries(UUID id, int tries) {
-        String sql = "update webhook_events set tries = ?, last_updated = CURRENT_TIMESTAMP where id = ?";
-        try {
-            int rows = jdbc.update(sql, tries, id);
-            return rows == 1;
-        } catch (Exception e) {
-            logger.error("Failed to update tries for webhook event {}", id, e);
-            return false;
-        }
-    }
-
-    public boolean UpsertEvent(UUID id, byte[] data, long webhookId, long userId, Long userEventOrder, long arrivalOrder, int tries, String status) {
-        String sql = "insert into webhook_events (id,data,webhook_id,user_id,user_event_order,arrival_order,tries,status) values (?,?,?,?,?,?,?,?) " +
-                     "on conflict (webhook_id,arrival_order) do update set data = excluded.data, user_id = excluded.user_id, user_event_order = excluded.user_event_order, tries = excluded.tries, status = excluded.status, last_updated = CURRENT_TIMESTAMP";
-        try {
-            int rows = jdbc.update(sql, id, data, webhookId, userId, userEventOrder, arrivalOrder, tries, status);
-            return rows == 1;
-        } catch (Exception e) {
-            logger.error("Failed to upsert webhook event {}", id, e);
-            return false;
-        }
-    }
 }

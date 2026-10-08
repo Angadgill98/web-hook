@@ -16,4 +16,7 @@ public class Handlers {
 
     @Autowired 
     public Api_Webhook_handler api_webhook;
+
+    @Autowired 
+    public Webhook_handler webhook;
 }

@@ -5,6 +5,7 @@ public class Webhook_dto {
     public static class CreateWebHook_Req {
         public String routeName;
         public String receiverUrl;
+        public String httpMethod;
     }
 
     public static class UpdateReceiverUrl_Req {
