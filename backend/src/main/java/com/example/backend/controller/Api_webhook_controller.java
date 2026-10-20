@@ -29,7 +29,8 @@ public class Api_webhook_controller {
     private Handlers handler;
 
     @PostMapping("/create")
-    public WebhookResult CreateWebHook(@RequestBody Webhook_dto.CreateWebHook_Req request,Authentication authentication) {
+    public Webhook_dto.CreateWebHook_Res CreateWebHook(@RequestBody Webhook_dto.CreateWebHook_Req request,Authentication authentication) {
+        Webhook_dto.CreateWebHook_Res res=new Webhook_dto.CreateWebHook_Res();
         long userId = Long.parseLong(authentication.getName());
 
         WebhookResult result = handler.api_webhook.CreateWebHook(
@@ -40,15 +41,33 @@ public class Api_webhook_controller {
         );
 
         logger.info("Create webhook request completed for user: {}", userId);
-
-        return result;
+        res.success=result.success();
+        res.message=result.message();
+        res.webhookUrl=result.webhookUrl();
+        return res;
     }
 
     @GetMapping("/get-all-webhooks")
-    public List<Webhook> GetAllWebhooks(Authentication authentication) {
+    public Webhook_dto.GetAllWebHooks_Res GetAllWebhooks(Authentication authentication) {
+        Webhook_dto.GetAllWebHooks_Res res= new Webhook_dto.GetAllWebHooks_Res(); 
         long user_id = Long.parseLong(authentication.getName());
 
-        return handler.api_webhook.GetWebhooksByUserId(user_id);
+        List<Webhook> webhooks = handler.api_webhook.GetWebhooksByUserId(user_id);
+        res.success=true;
+        res.webhooks=webhooks;
+        return res;
+    }
+
+    @PostMapping("/get-webhook-history")
+    public Webhook_dto.GetWebhookHistory_Res GetWebhookHistory(@RequestBody Webhook_dto.GetWebhookHistory_Req req, Authentication authentication) {
+        Webhook_dto.GetWebhookHistory_Res res = new Webhook_dto.GetWebhookHistory_Res();
+
+        long user_id = Long.parseLong(authentication.getName());
+
+        res.success = true;
+        res.events = handler.api_webhook.GetWebhookHistoryById(req.webhook_id, user_id);
+
+        return res;
     }
 
     @PutMapping("/update-rec-url")

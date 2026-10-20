@@ -1,6 +1,7 @@
 "use client"
 
 import { Api } from '@/Api';
+import Link from 'next/link';
 import React, { useRef, useState } from 'react'
 
 let api = Api.getInstance()
@@ -27,7 +28,7 @@ const Signup = () => {
                     Sign Up
                 </button>
 
-                <span>Sign In?</span>
+                <Link href={"/Auth/Signin"}>Sign In?</Link>
 
             </div>
 

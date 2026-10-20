@@ -45,4 +45,34 @@ public class Webhook_events_table_repo {
         }
     }
 
+    public List<WebhookEvent> GetEventsByWebhookIdAndUserId(long webhook_id, long user_id) {
+        String sql = """
+            SELECT *
+            FROM webhook_events
+            WHERE webhook_id = ?
+            AND user_id = ?
+            AND status IN ('completed', 'failed')
+            ORDER BY arrival_order ASC
+            """;
+
+        try {
+            return jdbc.query(sql, (rs, rowNum) -> {
+                WebhookEvent event = new WebhookEvent();
+                event.setId((UUID) rs.getObject("id"));
+                event.setData(rs.getBytes("data"));
+                event.setWebhookId(rs.getLong("webhook_id"));
+                event.setUserId(rs.getLong("user_id"));
+                event.setUserEventOrder(rs.getLong("user_event_order"));
+                event.setArrivalOrder(rs.getLong("arrival_order"));
+                event.setTries(rs.getInt("tries"));
+                event.setStatus(rs.getString("status"));
+                return event;
+            }, webhook_id, user_id);
+
+        } catch (Exception e) {
+            logger.error("Failed to fetch events for webhook {} and user {}", webhook_id, user_id, e);
+            return List.of();
+        }
+    }
+
 }

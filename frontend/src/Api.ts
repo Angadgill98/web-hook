@@ -119,12 +119,13 @@ class Webhook_api {
         this.url = url;
     }
 
-    async CreateWebHook(route_name: string, receiver_url: string) {
+    async CreateWebHook(route_name: string, receiver_url: string,method:string) {
         let endpoint = `${this.url}/webhook/create`;
 
         let body = {
             routeName: route_name,
-            receiverUrl: receiver_url
+            receiverUrl: receiver_url,
+            httpMethod:method,
         };
 
         try {
@@ -241,4 +242,61 @@ class Webhook_api {
             return null;
         }
     }
+
+    async GetAllWebHooks() {
+        let endpoint = `${this.url}/webhook/get-all-webhooks`;
+
+        try {
+            let response = await fetch(endpoint, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "include"
+            });
+
+            let data = await response.json();
+
+            console.log("API Response Status:", response.status);
+            console.log("API Response Data:", data);
+
+            return data;
+        } catch (error) {
+            console.error("API Exception:", error);
+
+            return null;
+        }
+    }
+
+
+    async GetWebhookHistory(webhook_id: number) {
+        let endpoint = `${this.url}/webhook/get-webhook-history`;
+
+        let body = {
+            webhook_id: webhook_id
+        };
+
+        try {
+            let response = await fetch(endpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "include",
+                body: JSON.stringify(body)
+            });
+
+            let data = await response.json();
+
+            console.log("API Response Status:", response.status);
+            console.log("API Response Data:", data);
+
+            return data;
+        } catch (error) {
+            console.error("API Exception:", error);
+
+            return null;
+        }
+    }
+
 }

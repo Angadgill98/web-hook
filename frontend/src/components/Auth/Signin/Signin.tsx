@@ -2,13 +2,18 @@
 
 import { Api } from '@/Api';
 import React, { useRef, useState } from 'react'
-
+import './Signin.scss';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 let api = Api.getInstance()
 
 const Signin = () => {
 
     let mail = useRef<HTMLInputElement | null>(null);
     let pass = useRef<HTMLInputElement | null>(null);
+
+    let router= useRouter()
 
     let [is_send, set_send] = useState<boolean>(false)
 
@@ -21,11 +26,11 @@ const Signin = () => {
                 <input ref={mail} placeholder='Enter Mail'/>
                 <input ref={pass} placeholder='Enter Password'/>
 
-                <button onClick={() => HandleSignIn(api, mail, pass, is_send, set_send)}>
+                <button onClick={() => HandleSignIn(api, mail, pass, is_send, set_send,router)}>
                     Sign In
                 </button>
 
-                <span>Sign Up?</span>
+                <Link href="/Auth/Signup">Sign Up?</Link>
 
             </div>
 
@@ -41,7 +46,8 @@ async function HandleSignIn(
     mail: React.RefObject<HTMLInputElement | null>,
     pass: React.RefObject<HTMLInputElement | null>,
     is_send: boolean,
-    set_send: React.Dispatch<React.SetStateAction<boolean>>
+    set_send: React.Dispatch<React.SetStateAction<boolean>>,
+    router: AppRouterInstance
 ) {
     if (is_send) {
         return;
@@ -55,7 +61,11 @@ async function HandleSignIn(
             pass.current?.value ?? ""
         );
 
-        // response received
+        if (!response.success) {
+            console.log("Failed to sign in");
+        } else {
+            router.push("/dashboard");
+        }
     } finally {
         set_send(false);
     }

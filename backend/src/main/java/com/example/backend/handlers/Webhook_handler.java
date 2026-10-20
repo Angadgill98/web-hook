@@ -24,8 +24,8 @@ public class Webhook_handler {
     @Autowired
     private KafkaTemplate<String, WebhookEvent> web_hook_event_producer_template;
 
-    @Autowired
-    private KafkaTemplate<String, WebhookEvent> web_hook_status_template;
+    // @Autowired
+    // private KafkaTemplate<String, WebhookEvent> web_hook_status_template;
 
     public void init(String webhook_url, byte[] body) {
         Webhook webhook = repo.webhook_repo.GetWebhookByUrl(webhook_url);
@@ -57,11 +57,11 @@ public class Webhook_handler {
         );
 
 
-        web_hook_status_template.send(
-            "events_status",
-            String.valueOf(webhook.getId()),
-            event
-        );
+        // web_hook_status_template.send(
+        //     "events_status",
+        //     String.valueOf(webhook.getId()),
+        //     event
+        // );
     }
 
 

@@ -13,10 +13,10 @@ public class Process_event_status {
     @Autowired 
     private  Workers workers;
 
-    @KafkaListener(topics = "events_status", containerFactory = "statusKafkaListenerFactory")
-    public void consume(WebhookEvent status) {
+    // @KafkaListener(topics = "events_status", containerFactory = "statusKafkaListenerFactory")
+    // public void consume(WebhookEvent status) {
 
-        System.out.println("Received event status: " + status);
-        workers.send(status);
-    }
+    //     System.out.println("Received event status: " + status);
+    //     workers.send(status);
+    // }
 }

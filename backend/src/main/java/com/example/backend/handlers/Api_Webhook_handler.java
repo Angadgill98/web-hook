@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.backend.models.Webhook;
+import com.example.backend.models.WebhookEvent;
 import com.example.backend.repo.Repo;
 import com.example.backend.services.Services;
 
@@ -34,6 +35,10 @@ public class Api_Webhook_handler {
 
     public List<Webhook> GetWebhooksByUserId(long user_id) {
         return repo.webhook_repo.GetWebhooksByUserId(user_id);
+    }
+
+    public List<WebhookEvent> GetWebhookHistoryById(long webhook_id, long user_id) {
+        return repo.webhook_events_repo.GetEventsByWebhookIdAndUserId(webhook_id, user_id);
     }
 
     public boolean UpdateReceiverUrl(long user_id, long webhook_id, String receiver_url) {
