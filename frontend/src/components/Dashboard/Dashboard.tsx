@@ -42,7 +42,7 @@ const Dashboard = () => {
                 
         
             <div>
-            {webhook_list != null &&webhook_list.map((webhook) => (<WebhookUrlTemplate webhook={webhook} />))}
+            {webhook_list != null &&webhook_list.map((webhook) => (<WebhookUrlTemplate webhook={webhook} setwebhooks={setwebhooks} />))}
         </div>
         
         
@@ -54,7 +54,7 @@ const Dashboard = () => {
 export default Dashboard;
 
 
-const WebhookUrlTemplate =({ webhook }: { webhook: Webhook }) => {
+const WebhookUrlTemplate = ({ webhook, setwebhooks }: { webhook: Webhook; setwebhooks: React.Dispatch<React.SetStateAction<Webhook[]>> }) => {
     let [toggle, setoggle] = useState<boolean>(false);
     let [history,sethistory]=useState<WebhookEvent[]>([])
     let handle_info_button = () => {
@@ -78,10 +78,19 @@ const WebhookUrlTemplate =({ webhook }: { webhook: Webhook }) => {
         await api.webhook_api.UpdateReceiverUrl(webhook.id, receiver_url);
     };
 
+    let handle_delete=async (webhook_id:number)=>{
+        let res=await DeleteWebHook(webhook_id)
+
+        if (res) {
+            setwebhooks(prev => prev.filter(webhook => webhook.id !== webhook_id));
+        }
+    }
+
     return (
         <li key={webhook.id}>
             <button onClick={handle_info_button}>Info</button>
             <button onClick={handle_history_button}>History</button>
+            <button onClick={()=>{}}>Delete</button>
 
             {!toggle ? (
                 <div>
@@ -187,10 +196,9 @@ async function UpdateRouteName(webhookId: number, routeName: string) {
 
 }
 
-async function DeleteWebHook(webhookId: number) {
-
+async function DeleteWebHook(webhookId: number):Promise<boolean> {
+   return await api.webhook_api.DeleteWebHook(webhookId);
 }
-
 
 
 
