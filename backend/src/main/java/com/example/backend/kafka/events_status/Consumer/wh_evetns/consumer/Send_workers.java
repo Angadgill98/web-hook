@@ -1,4 +1,4 @@
-package com.example.backend.kafka.wh_evetns.consumer;
+package com.example.backend.kafka.events_status.Consumer.wh_evetns.consumer;
 
 import java.net.URI;
 import java.net.http.HttpClient;

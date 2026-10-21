@@ -56,13 +56,26 @@ export default Dashboard;
 
 const WebhookUrlTemplate =({ webhook }: { webhook: Webhook }) => {
     let [toggle, setoggle] = useState<boolean>(false);
-
+    let [history,sethistory]=useState<WebhookEvent[]>([])
     let handle_info_button = () => {
-        setoggle(!toggle);
+        setoggle(false);
     };
 
     let handle_history_button = async () => {
         let history= await GetWebhookHistory(webhook)
+        sethistory(history)
+        setoggle(true)
+    };
+
+
+    let receiver_url_ref = useRef<HTMLInputElement>(null);
+
+    let handle_update_rec_url = async () => {
+        let receiver_url = receiver_url_ref.current?.value;
+
+        if (!receiver_url) return;
+
+        await api.webhook_api.UpdateReceiverUrl(webhook.id, receiver_url);
     };
 
     return (
@@ -70,7 +83,7 @@ const WebhookUrlTemplate =({ webhook }: { webhook: Webhook }) => {
             <button onClick={handle_info_button}>Info</button>
             <button onClick={handle_history_button}>History</button>
 
-            {toggle && (
+            {!toggle ? (
                 <div>
                     <p>ID: {webhook.id}</p>
                     <p>HTTP Method: {webhook.httpMethod}</p>
@@ -78,7 +91,18 @@ const WebhookUrlTemplate =({ webhook }: { webhook: Webhook }) => {
                     <p>Receiver Endpoint: {webhook.receiverEndpoint}</p>
                     <p>Route Name: {webhook.routeName}</p>
                     <p>User ID: {webhook.userId}</p>
-                    <p>Webhook URL: {webhook.webhookUrl}</p>
+                    <div>
+                        <p>Webhook URL: {webhook.webhookUrl}</p>
+                        <input type="text" placeholder="new url"  ref={receiver_url_ref}/>
+                        <button onClick={handle_update_rec_url}>Update</button>
+                    </div>
+                </div>
+            ) : (
+                <div>
+                    {history.length > 0 &&
+                        history.map((event) => (
+                            <HistoryTemplate key={event.id} event={event} />
+                        ))}
                 </div>
             )}
         </li>
@@ -87,9 +111,20 @@ const WebhookUrlTemplate =({ webhook }: { webhook: Webhook }) => {
 
 
 
-const history_template=()=>{
-
-}
+const HistoryTemplate = ({ event }: { event: WebhookEvent }) => {
+    return (
+        <div>
+            <p>ID: {event.id}</p>
+            <p>Webhook ID: {event.webhookId}</p>
+            <p>User ID: {event.userId}</p>
+            <p>User Event Order: {event.userEventOrder}</p>
+            <p>Arrival Order: {event.arrivalOrder}</p>
+            <p>Tries: {event.tries}</p>
+            <p>Status: {event.status}</p>
+            <p>Data: {JSON.stringify(event.data)}</p>
+        </div>
+    );
+};
 
 
 async function HandleWebHookCreation(
@@ -145,7 +180,7 @@ export interface Webhook {
 
 
 async function UpdateReceiverUrl(webhookId: number, receiverUrl: string) {
-
+    let res=await api.webhook_api.UpdateReceiverUrl(webhookId,receiverUrl)
 }
 
 async function UpdateRouteName(webhookId: number, routeName: string) {
@@ -160,8 +195,14 @@ async function DeleteWebHook(webhookId: number) {
 
 
 
-async function GetWebhookHistory(webhook:Webhook){
-    let response= await api.webhook_api.GetWebhookHistory(webhook.id)
+async function GetWebhookHistory(webhook: Webhook): Promise<WebhookEvent[]> {
+    const response = await api.webhook_api.GetWebhookHistory(webhook.id);
+
+    if (response?.success) {
+        return response.events;
+    }
+
+    return [];
 }
 
 export interface WebhookEvent {

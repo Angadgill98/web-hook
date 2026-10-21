@@ -13,7 +13,7 @@ CREATE TABLE webhook_events (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_updated TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE (webhook_id),
+    UNIQUE (id),
 
     FOREIGN KEY (webhook_id) REFERENCES webhook(id),
     FOREIGN KEY (user_id) REFERENCES users(id)

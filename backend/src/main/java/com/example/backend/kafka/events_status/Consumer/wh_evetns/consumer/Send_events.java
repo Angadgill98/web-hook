@@ -1,4 +1,4 @@
-package com.example.backend.kafka.wh_evetns.consumer;
+package com.example.backend.kafka.events_status.Consumer.wh_evetns.consumer;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;

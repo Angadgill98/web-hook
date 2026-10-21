@@ -24,6 +24,7 @@ public class Webhook_handler {
     @Autowired
     private KafkaTemplate<String, WebhookEvent> web_hook_event_producer_template;
 
+    //for now we are usign 1 producer but alter if neede we can separe into 2 producer for each topic 
     // @Autowired
     // private KafkaTemplate<String, WebhookEvent> web_hook_status_template;
 
@@ -37,6 +38,7 @@ public class Webhook_handler {
         WebhookEvent event = new WebhookEvent(
             eventId,
             body,
+            webhook.getHttpMethod(),
             webhook.getHttpMethod(),
             webhook.getReceiverEndpoint(),
             null,
@@ -62,6 +64,11 @@ public class Webhook_handler {
         //     String.valueOf(webhook.getId()),
         //     event
         // );
+         web_hook_event_producer_template.send(
+            "events_status",
+            String.valueOf(webhook.getId()),
+            event
+        );
     }
 
 

@@ -4,6 +4,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.example.backend.models.WebhookEvent;
@@ -19,8 +20,10 @@ public class Workers {
 
     private int worker_count = 3;
     private BlockingQueue<WebhookEvent> queue;
+    
+    @Autowired 
+    private Events_Processing_Pipeline pipeline;
 
-    private Events_Processing_Pipeline pipeline=new Events_Processing_Pipeline();
 
     public Workers() {
         queue = new LinkedBlockingQueue<>();
@@ -37,7 +40,9 @@ public class Workers {
 
                         // Process status here
 
-                        pipeline.InsertEvent(event);
+                         pipeline.InsertEvent(event);
+
+                        
 
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
@@ -57,6 +62,7 @@ public class Workers {
     }
 }
 
+@Service 
 class Events_Processing_Pipeline {
 
     private Map<String, Map<String, List<WebhookEvent>>> events = new ConcurrentHashMap<>();
@@ -66,7 +72,7 @@ class Events_Processing_Pipeline {
     @Autowired 
     private Repo repo;
 
-    public void InsertEvent(WebhookEvent event) {
+    public synchronized void InsertEvent(WebhookEvent event) {
         String eventId = event.getId().toString();
 
         if (!events.containsKey(eventId)) {
@@ -84,15 +90,26 @@ class Events_Processing_Pipeline {
 
         eventCount++;
 
-        CheckBatch();
+        // return CheckBatch();
     }
 
-    public void CheckBatch() {
+    public List<WebhookEvent> CheckBatch() {
         if (eventCount >= batchSize) {
             List<WebhookEvent> finalEvents = ProcessBatch();
             InsertEvents(finalEvents);
-            //here later upda teh status to teh stored and then sent those ot kafka
+
+            return UpdateStatusToStored(finalEvents);
         }
+
+        return new ArrayList<>();
+    }
+
+    public List<WebhookEvent> UpdateStatusToStored(List<WebhookEvent> events) {
+        for (WebhookEvent event : events) {
+            event.setStatus("stored");
+        }
+
+        return events;
     }
 
     public List<WebhookEvent> ProcessBatch() {
@@ -145,33 +162,55 @@ class Events_Processing_Pipeline {
     }
 
 
+    @Scheduled(fixedDelay = 1000)
+    public void FlushBatchByTime() {
+        List<WebhookEvent> batch;
+
+        synchronized (this) {
+            if (eventCount == 0) {
+                return;
+            }
+
+            batch = ProcessBatch();
+
+            events.clear();
+            eventCount = 0;
+        }
+
+        if (!batch.isEmpty()) {
+            InsertEvents(batch);
+        }
+    }
+
     public void InsertEvents(List<WebhookEvent> events) {
         String baseQuery = """
             INSERT INTO webhook_events
             """;
 
         String columns = """
-            (id, data, webhook_id, user_id, user_event_order, arrival_order, tries, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (id, data, webhook_id, user_id, user_event_order, arrival_order, tries, status,http_method,receiver_endpoint)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?,?,?)
             """;
 
         String onConflict = """
-            ON CONFLICT (webhook_id)
+            ON CONFLICT (id)
             """;
 
         String doUpdate = """
-            DO UPDATE SET
-                data = EXCLUDED.data,
-                user_id = EXCLUDED.user_id,
-                user_event_order = EXCLUDED.user_event_order,
-                tries = EXCLUDED.tries,
-                status = CASE
-                    WHEN EXCLUDED.status = 'sent' THEN 'stored'
-                    ELSE EXCLUDED.status
-                END,
-                arrival_order = EXCLUDED.arrival_order,
-                last_updated = CURRENT_TIMESTAMP
-            """;
+        DO UPDATE SET
+            data = EXCLUDED.data,
+            http_method = EXCLUDED.http_method,
+            receiver_endpoint = EXCLUDED.receiver_endpoint,
+            user_id = EXCLUDED.user_id,
+            user_event_order = EXCLUDED.user_event_order,
+            tries = EXCLUDED.tries,
+            status = CASE
+                WHEN EXCLUDED.status = 'sent' THEN 'stored'
+                ELSE EXCLUDED.status
+            END,
+            arrival_order = EXCLUDED.arrival_order,
+            last_updated = CURRENT_TIMESTAMP
+        """;
 
         String incomingStatusPriority = """
             CASE EXCLUDED.status

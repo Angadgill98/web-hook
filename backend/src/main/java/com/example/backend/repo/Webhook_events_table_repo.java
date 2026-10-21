@@ -20,7 +20,7 @@ public class Webhook_events_table_repo {
 
     private static final Logger logger = LoggerFactory.getLogger(Webhook_events_table_repo.class);
 
-    public void InsertEvents(String sql, List<WebhookEvent> events) {
+    public boolean InsertEvents(String sql, List<WebhookEvent> events) {
         try {
             jdbc.batchUpdate(
                 sql,
@@ -35,13 +35,17 @@ public class Webhook_events_table_repo {
                     ps.setLong(6, event.getArrivalOrder());
                     ps.setInt(7, event.getTries());
                     ps.setString(8, event.getStatus());
+                    ps.setString(9, event.getHttpMethod());
+                    ps.setString(10, event.getReceiverEndpoint());
                 }
             );
 
             logger.info("Inserted {} webhook events", events.size());
+            return true;
 
         } catch (Exception e) {
             logger.error("Failed to insert {} webhook events", events.size(), e);
+            return false;
         }
     }
 
@@ -51,7 +55,7 @@ public class Webhook_events_table_repo {
             FROM webhook_events
             WHERE webhook_id = ?
             AND user_id = ?
-            AND status IN ('completed', 'failed')
+            AND status IN ('stored', 'failed')
             ORDER BY arrival_order ASC
             """;
 

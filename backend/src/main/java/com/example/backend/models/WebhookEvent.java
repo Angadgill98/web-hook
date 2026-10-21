@@ -8,6 +8,7 @@ public class WebhookEvent {
     private UUID id;
     private byte[] data;
     private String httpMethod;
+    private String webhookHttpMethod;
     private String receiverEndpoint;
     private byte[][] response;
     private long webhookId;
@@ -20,13 +21,13 @@ public class WebhookEvent {
     private OffsetDateTime lastUpdated;
 
     public WebhookEvent() {
-    
     }
 
     public WebhookEvent(
             UUID id,
             byte[] data,
             String httpMethod,
+            String webhookHttpMethod,
             String receiverEndpoint,
             byte[][] response,
             long webhookId,
@@ -41,6 +42,7 @@ public class WebhookEvent {
         this.id = id;
         this.data = data;
         this.httpMethod = httpMethod;
+        this.webhookHttpMethod = webhookHttpMethod;
         this.receiverEndpoint = receiverEndpoint;
         this.response = response;
         this.webhookId = webhookId;
@@ -75,6 +77,14 @@ public class WebhookEvent {
 
     public void setHttpMethod(String httpMethod) {
         this.httpMethod = httpMethod;
+    }
+
+    public String getWebhookHttpMethod() {
+        return webhookHttpMethod;
+    }
+
+    public void setWebhookHttpMethod(String webhookHttpMethod) {
+        this.webhookHttpMethod = webhookHttpMethod;
     }
 
     public String getReceiverEndpoint() {
